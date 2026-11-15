@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AES Inside — Interactive AES-128 Round-by-Round Visualizer</title>
+  <meta name="description" content="Interactive round-by-round visualizer of the AES-128 encryption and decryption algorithm with GF(2^8) inspection, Avalanche analysis, and guided tutorials." />
+
+  <!-- Fonts: Unbounded / Syne for display & JetBrains Mono for bytes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@600;700;800&family=Unbounded:wght@500;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Full-screen Interactive Network Canvas (Background Layer) -->
+  <canvas id="network-canvas" aria-hidden="true"></canvas>
+
+  <!-- Subtle Hex-Grid Texture Overlay -->
+  <div class="hex-bg-overlay" aria-hidden="true"></div>
+
+  <!-- Terminal Boot Sequence Intro Overlay -->
+  <div id="boot-overlay" class="boot-overlay" role="dialog" aria-label="System initialization">
+    <div class="boot-terminal glass-panel">
+      <div class="boot-header">
+        <span class="boot-dot cyan"></span>
+        <span class="boot-dot amber"></span>
+        <span class="boot-dot magenta"></span>
+        <span class="boot-title">AES-128 CORE // INIT</span>
+        <button id="skip-boot-btn" class="btn-ghost btn-xs" type="button">Skip Intro</button>
+      </div>
+      <pre id="boot-log" class="boot-log" aria-live="polite"></pre>
+    </div>
+  </div>
+
+  <!-- Main Application Shell -->
+  <div id="app-shell" class="app-shell">
+    <!-- TOP BAR -->
+    <header class="top-bar glass-panel">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div>
+          <h1 class="brand-title">AES INSIDE</h1>
+          <p class="brand-sub">FIPS-197 // 128-BIT CIPHER ENGINE</p>
+        </div>
+      </div>
+
+      <div class="top-controls">
+        <div class="segmented-control" role="group" aria-label="Cipher mode">
+          <button id="mode-encrypt-btn" class="seg-btn active" type="button" aria-pressed="true">Encrypt</button>
+          <button id="mode-decrypt-btn" class="seg-btn" type="button" aria-pressed="false">Decrypt</button>
+        </div>
+
+        <button id="avalanche-toggle-btn" class="btn-avalanche" type="button" aria-pressed="false">
+          <span class="pulse-dot" aria-hidden="true"></span>
+          Avalanche Mode
+        </button>
+
+        <!-- Tutorial Controls -->
+        <div class="tutorial-bar-group">
+          <button id="tour-start-btn" class="btn-tutorial" type="button">Take the tour</button>
+          <button id="learn-drawer-btn" class="btn-tutorial btn-learn" type="button" aria-expanded="false" aria-controls="learn-drawer">Learn AES</button>
+          <div class="segmented-control level-toggle" role="group" aria-label="Explanation depth">
+            <button id="level-beginner-btn" class="seg-btn active" type="button" aria-pressed="true">Beginner</button>
+            <button id="level-expert-btn" class="seg-btn" type="button" aria-pressed="false">Expert</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="nist-badge" class="status-badge" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="nist-badge-text">Verifying engine...</span>
+      </div>
+    </header>
+
+    <!-- MAIN THREE-COLUMN WORKSPACE -->
+    <main class="workspace">
+      <!-- LEFT PANEL: INPUTS & VECTORS -->
+      <aside class="panel glass-panel left-panel" aria-label="Cipher inputs">
+        <div class="panel-header">
+          <h2 class="panel-title">Input Vector</h2>
+          <span class="chip chip-cyan">128-BIT</span>
+        </div>
+
+        <div class="input-block">
+          <div class="input-label-row">
+            <label id="plaintext-label" for="plaintext-input">Plaintext (16 bytes)</label>
+            <div class="mini-toggle" role="group" aria-label="Data input format">
+              <button id="input-format-hex" class="mini-btn active" type="button" aria-pressed="true">HEX</button>
+              <button id="input-format-text" class="mini-btn" type="button" aria-pressed="false">TEXT</button>
+            </div>
+          </div>
+          <input
+            id="plaintext-input"
+            class="mono-input"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            value="3243f6a8885a308d313198a2e0370734"
+            aria-describedby="plaintext-hex-preview"
+          />
+          <div id="plaintext-hex-preview" class="hex-preview" title="Padded 16-byte representation"></div>
+        </div>
+
+        <div class="input-block">
+          <div class="input-label-row">
+            <label for="key-input">Secret Key (128-bit)</label>
+            <div class="mini-toggle" role="group" aria-label="Key input format">
+              <button id="key-format-hex" class="mini-btn active" type="button" aria-pressed="true">HEX</button>
+              <button id="key-format-text" class="mini-btn" type="button" aria-pressed="false">TEXT</button>
+            </div>
+          </div>
+          <input
+            id="key-input"
+            class="mono-input"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            value="2b7e151628aed2a6abf7158809cf4f3c"
+            aria-describedby="key-hex-preview"
+          />
+          <div id="key-hex-preview" class="hex-preview" title="Padded 16-byte key"></div>
+        </div>
+
+        <div class="action-row">
+          <button id="load-nist-btn" class="btn-primary" type="button">Load NIST Test Vector</button>
+          <button id="randomize-btn" class="btn-secondary" type="button">Randomize</button>
+        </div>
+
+        <div class="output-card">
+          <div class="input-label-row">
+            <span id="final-output-label" class="output-label">Final Ciphertext</span>
+            <div class="output-actions">
+              <button id="swap-output-btn" class="btn-ghost btn-xs" type="button" title="Feed this output into input and switch mode">Use &amp; Flip Mode</button>
+              <button id="copy-output-btn" class="btn-ghost btn-xs" type="button">Copy</button>
+            </div>
+          </div>
+          <div id="final-output-hex" class="output-hex" tabindex="0" aria-label="Computed cipher output"></div>
+        </div>
+
+        <div class="legend-box" aria-label="Color legend">
+          <div class="legend-item"><span class="swatch cyan"></span><span>Data / Key</span></div>
+          <div class="legend-item"><span class="swatch magenta"></span><span>Changed (Diffusion)</span></div>
+          <div class="legend-item"><span class="swatch amber"></span><span>Active Operation</span></div>
+        </div>
+      </aside>
+
+      <!-- CENTER STAGE: 4x4 STATE + OPERATION ANIMATION / AVALANCHE MODE -->
+      <section class="panel glass-panel center-stage" aria-label="AES State Visualization Stage">
+        <div class="stage-header">
+          <div>
+            <span id="round-badge" class="round-badge">ROUND 00</span>
+            <h2 id="progress-label" class="progress-label">Round 0 of 10, step 1 of 1: AddRoundKey</h2>
+          </div>
+          <div class="stage-hint">Hover any tile for hex/bin/dec &amp; row/col peers</div>
+        </div>
+
+        <!-- STANDARD MODE STAGE -->
+        <div id="standard-stage" class="standard-stage">
+          <div id="stage-particles" class="stage-particles" aria-hidden="true"></div>
+          <svg id="sbox-beam-svg" class="sbox-beam-svg" aria-hidden="true"></svg>
+
+          <div class="stage-grid-and-op">
+            <div class="state-column">
+              <div class="state-caption-row">
+                <span class="sub-label">4&times;4 AES STATE MATRIX (COLUMN-MAJOR)</span>
+              </div>
+
+              <div class="state-perspective-wrap">
+                <div id="shift-labels" class="shift-labels" aria-hidden="true">
+                  <div class="shift-tag" data-row="0">&laquo; 0</div>
+                  <div class="shift-tag" data-row="1">&laquo; 1</div>
+                  <div class="shift-tag" data-row="2">&laquo; 2</div>
+                  <div class="shift-tag" data-row="3">&laquo; 3</div>
+                </div>
+
+                <div id="state-grid-wrapper" class="state-grid-wrapper">
+                  <svg id="influence-svg" class="influence-svg" aria-hidden="true"></svg>
+                  <div id="state-grid" class="state-grid" role="grid" aria-label="4 by 4 AES State Bytes"></div>
+                </div>
+              </div>
+
+              <div class="col-indices" aria-hidden="true">
+                <span>Col 0</span><span>Col 1</span><span>Col 2</span><span>Col 3</span>
+              </div>
+            </div>
+
+            <div id="op-stage" class="op-stage" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <!-- AVALANCHE MODE STAGE -->
+        <div id="avalanche-stage" class="avalanche-stage hidden" aria-label="Avalanche Effect Analyzer">
+          <div class="av-controls glass-subpanel">
+            <div class="av-controls-top">
+              <div class="av-target-group">
+                <span class="sub-label">FLIP 1 BIT IN:</span>
+                <div class="mini-toggle" role="group" aria-label="Avalanche bit flip target">
+                  <button id="av-target-pt" class="mini-btn active" type="button" aria-pressed="true">Plaintext</button>
+                  <button id="av-target-key" class="mini-btn" type="button" aria-pressed="false">Key</button>
+                </div>
+              </div>
+              <div id="av-flipped-info" class="av-flipped-info">Flipped: Byte 0, Bit 0 (MSB)</div>
+              <button id="av-random-flip-btn" class="btn-secondary btn-xs" type="button">Flip Random Bit</button>
+            </div>
+            <div id="av-bit-grid" class="av-bit-grid" aria-label="128-bit selector to flip one bit"></div>
+          </div>
+
+          <div class="av-dual-states">
+            <div class="av-state-card">
+              <div class="av-card-head">
+                <span class="sub-label">ORIGINAL STATE (A)</span>
+                <span class="chip chip-cyan">BASELINE</span>
+              </div>
+              <div id="av-grid-a" class="state-grid compact" role="grid" aria-label="Original AES state"></div>
+            </div>
+
+            <div class="av-metrics-mid">
+              <div class="av-counter-box">
+                <div class="av-counter-label">BITS DIFFERING</div>
+                <div id="av-diff-counter" class="av-counter-val">0 / 128</div>
+                <div id="av-diff-percent" class="av-counter-pct">0.0%</div>
+                <div id="av-byte-diff-counter" class="av-counter-sub">0 / 16 bytes</div>
+              </div>
+            </div>
+
+            <div class="av-state-card">
+              <div class="av-card-head">
+                <span class="sub-label">1-BIT FLIPPED STATE (B)</span>
+                <span class="chip chip-magenta">DIFFUSION</span>
+              </div>
+              <div id="av-grid-b" class="state-grid compact" role="grid" aria-label="Flipped-bit AES state"></div>
+            </div>
+          </div>
+
+          <div class="av-analytics">
+            <div class="av-chart-panel glass-subpanel">
+              <div class="av-panel-head">
+                <span class="sub-label">BIT DIFFERENCE PER ROUND (TARGET ~64 BITS / 50%)</span>
+              </div>
+              <canvas id="av-chart-canvas" width="480" height="170" aria-label="Line chart of differing bits per round"></canvas>
+            </div>
+
+            <div class="av-heatmap-panel glass-subpanel">
+              <div class="av-panel-head">
+                <span class="sub-label">ROUND-BY-ROUND BYTE DIFF HEATMAP (R0 &ndash; R10)</span>
+              </div>
+              <div id="av-heatmap" class="av-heatmap" aria-label="Round by round byte difference heatmap"></div>
+            </div>
+          </div>
+
+          <p id="av-caption" class="av-caption">
+            Flipping a single input bit triggers rapid diffusion across bytes via SubBytes (non-linear confusion), ShiftRows (inter-column dispersion), and MixColumns (intra-column mixing), converging toward ~50% (64 of 128 bits) within 3&ndash;4 rounds &mdash; satisfying the Strict Avalanche Criterion.
+          </p>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL: KEY SCHEDULE -->
+      <aside class="panel glass-panel right-panel" aria-label="AES Key Schedule">
+        <div class="panel-header">
+          <h2 class="panel-title">Key Schedule</h2>
+          <span class="chip chip-amber">11 ROUND KEYS</span>
+        </div>
+
+        <div id="key-schedule-list" class="key-schedule-list" role="list"></div>
+
+        <div id="key-expansion-detail" class="key-expansion-detail glass-subpanel" aria-live="polite">
+          <div class="sub-label">KEY EXPANSION TRANSFORM</div>
+          <div id="key-exp-body" class="key-exp-body">Select or step to a round to inspect RotWord, SubWord &amp; Rcon.</div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- BOTTOM: TIMELINE, PLAYBACK CONTROLS & CAPTION -->
+    <footer class="bottom-bar glass-panel">
+      <div class="timeline-wrap" aria-label="Round timeline">
+        <div id="timeline-track" class="timeline-track"></div>
+      </div>
+
+      <div class="controls-and-caption">
+        <div class="playback-controls" role="group" aria-label="Playback controls">
+          <button id="btn-reset" class="ctrl-btn" type="button" title="Reset to Step 0">
+            <span aria-hidden="true">&#8634;</span> Reset
+          </button>
+          <button id="btn-prev" class="ctrl-btn" type="button" title="Previous Step (Left Arrow)">
+            <span aria-hidden="true">&#9664;</span> Prev
+          </button>
+          <button id="btn-play" class="ctrl-btn ctrl-play" type="button" title="Play / Pause (Space)">
+            <span id="play-icon" aria-hidden="true">&#9654;</span>
+            <span id="play-label">Play</span>
+          </button>
+          <button id="btn-next" class="ctrl-btn" type="button" title="Next Step (Right Arrow)">
+            Next <span aria-hidden="true">&#9654;</span>
+          </button>
+
+          <label class="speed-control" for="speed-slider">
+            <span>Speed</span>
+            <input id="speed-slider" type="range" min="0.4" max="3" step="0.2" value="1" />
+            <span id="speed-value" class="speed-value">1.0&times;</span>
+          </label>
+        </div>
+
+        <div class="caption-box" role="status" aria-live="polite">
+          <span id="caption-op-tag" class="caption-op-tag">ADDROUNDKEY</span>
+          <div id="caption-text" class="caption-text"></div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- GUIDED TUTORIAL OVERLAYS (SPOTLIGHT TOUR, DRAWER, TIMELINE HELP)       -->
+  <!-- ====================================================================== -->
+
+  <!-- 1) Spotlight Tour Backdrop, Cutout & Card -->
+  <div id="tour-backdrop" class="tour-backdrop hidden" aria-hidden="true"></div>
+  <div id="tour-spotlight" class="tour-spotlight hidden" aria-hidden="true"></div>
+  <div id="tour-card" class="tour-card glass-panel hidden" role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-body">
+    <div class="tour-card-head">
+      <span id="tour-counter" class="chip chip-cyan">1 / 7</span>
+      <button id="tour-skip-btn" class="btn-ghost btn-xs" type="button">Skip</button>
+    </div>
+    <h3 id="tour-title" class="tour-title"></h3>
+    <p id="tour-body" class="tour-body"></p>
+    <div class="tour-card-foot">
+      <button id="tour-back-btn" class="btn-ghost btn-xs" type="button">Back</button>
+      <button id="tour-next-btn" class="btn-primary btn-xs" type="button">Next</button>
+    </div>
+  </div>
+
+  <!-- 2) Learn AES Read-Along Drawer (Right Drawer on Desktop / Bottom Sheet on Mobile) -->
+  <aside id="learn-drawer" class="learn-drawer glass-panel" aria-label="Learn AES Read-Along" aria-hidden="true">
+    <div class="learn-drawer-head">
+      <div>
+        <span class="sub-label">INTERACTIVE COURSE</span>
+        <h2 class="panel-title">Learn AES-128</h2>
+      </div>
+      <button id="learn-close-btn" class="btn-ghost btn-xs" type="button" aria-label="Close Learn AES drawer">&times;</button>
+    </div>
+
+    <div class="learn-progress-wrap">
+      <div class="learn-progress-track">
+        <div id="learn-progress-fill" class="learn-progress-fill"></div>
+      </div>
+      <span id="learn-progress-text" class="sub-label">Chapter 1 of 8</span>
+    </div>
+
+    <div id="learn-chapter-nav" class="learn-chapter-nav" role="tablist" aria-label="Chapters"></div>
+
+    <div id="learn-chapter-body" class="learn-chapter-body"></div>
+
+    <div class="learn-drawer-foot">
+      <button id="learn-prev-btn" class="btn-ghost" type="button">&larr; Previous</button>
+      <button id="learn-next-btn" class="btn-primary" type="button">Next chapter &rarr;</button>
+    </div>
+  </aside>
+
+  <!-- 3) Contextual Timeline Operation Help Popover -->
+  <div id="op-help-popover" class="op-help-popover glass-panel hidden" role="dialog" aria-labelledby="op-help-title">
+    <div class="popover-head">
+      <h3 id="op-help-title" class="popover-title">Operation</h3>
+      <button id="op-help-close" class="btn-ghost btn-xs" type="button" aria-label="Close operation help">&times;</button>
+    </div>
+    <p id="op-help-why" class="op-help-why"></p>
+    <div id="op-help-formula" class="tut-formula"></div>
+  </div>
+
+  <!-- Floating Byte Inspector Tooltip -->
+  <div id="byte-tooltip" class="byte-tooltip hidden" role="tooltip"></div>
+
+  <!-- MixColumns GF(2^8) Arithmetic Popover -->
+  <div id="mixcol-popover" class="mixcol-popover glass-panel hidden" role="dialog" aria-labelledby="mixcol-popover-title">
+    <div class="popover-head">
+      <h3 id="mixcol-popover-title" class="popover-title">GF(2<sup>8</sup>) MixColumns Arithmetic</h3>
+      <button id="mixcol-popover-close" class="btn-ghost btn-xs" type="button" aria-label="Close arithmetic popover">&times;</button>
+    </div>
+    <div id="mixcol-popover-body" class="popover-body"></div>
+  </div>
+
+  <!-- Scripts: Engine -> Network -> Tutorial -> UI Controller -->
+  <script src="aes.js"></script>
+  <script src="network.js"></script>
+  <script src="tutorial.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
