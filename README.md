@@ -12,9 +12,10 @@ Watch 128 bits get scrambled, one operation at a time, and see why a single flip
 ![Dependencies](https://img.shields.io/badge/dependencies-none-5CE1FF)
 ![NIST FIPS-197](https://img.shields.io/badge/FIPS--197-test%20vector%20verified-3fb950)
 
-**[Live demo](https://YOUR-SITE.netlify.app)** · **[Report an issue](https://github.com/YOUR-USERNAME/aes-inside/issues)**
+**[Live demo](https://YOUR-SITE.netlify.app)** · 
 
 
+<!-- ![AES Inside screenshot](docs/screenshots/hero.png) -->
 
 </div>
 
