@@ -14,6 +14,9 @@ Watch 128 bits get scrambled, one operation at a time, and see why a single flip
 
 **[Live demo](https://YOUR-SITE.netlify.app)** · 
 
+---
+---
+
 
 ![AES Inside screenshot](docs/screenshots/hero.png) 
 ![AES Inside screenshot](docs/screenshots/avalanche.PNG) 
