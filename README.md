@@ -16,7 +16,7 @@ Watch 128 bits get scrambled, one operation at a time, and see why a single flip
 
 
 ![AES Inside screenshot](docs/screenshots/hero.png) 
-![AES Inside screenshot](docs/screenshots/avalanche.png) 
+![AES Inside screenshot](docs/screenshots/avalanche.PNG) 
 
 </div>
 
