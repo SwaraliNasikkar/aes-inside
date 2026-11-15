@@ -196,6 +196,6 @@ AES Inside is a **teaching tool**, not a security product.
 
 <div align="center">
 
-Built by **Swarali Nasikkar** · [GitHub](https://github.com/SwaraliNasikkar) · [LinkedIn](https://www.linkedin.com/in/swarali-nasikkar)
+Built by **Swarali Nasikkar** · [GitHub](https://github.com/SwaraliNasikkar) · [LinkedIn](https://www.linkedin.com/in/SwaraliNasikkar)
 
 </div>
