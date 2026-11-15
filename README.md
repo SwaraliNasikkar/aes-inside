@@ -20,22 +20,6 @@ Watch 128 bits get scrambled, one operation at a time, and see why a single flip
 
 ---
 
-## Table of contents
-
-- [About](#about)
-- [Features](#features)
-- [How AES works (in brief)](#how-aes-works-in-brief)
-- [How the simulator works](#how-the-simulator-works)
-- [Getting started](#getting-started)
-- [Project structure](#project-structure)
-- [Controls and shortcuts](#controls-and-shortcuts)
-- [Verification](#verification)
-- [Deployment](#deployment)
-- [Limitations and educational scope](#limitations-and-educational-scope)
-- [Roadmap](#roadmap)
-- [Acknowledgements](#acknowledgements)
-- [License](#license)
-
 ---
 
 ## About
@@ -201,14 +185,12 @@ AES Inside is a **teaching tool**, not a security product.
 - [NIST FIPS-197](https://csrc.nist.gov/publications/detail/fips/197/final): the Advanced Encryption Standard specification.
 - Designed and developed with the help of AI tools as part of a Cryptography and Information Security course project. The cipher engine was verified against the official test vector, and the author is responsible for understanding and explaining the code.
 
-## License
 
-Released under the [MIT License](LICENSE). Add a `LICENSE` file to the repository root to match.
 
 ---
 
 <div align="center">
 
-Built by **YOUR NAME** · [GitHub](https://github.com/YOUR-USERNAME) · [LinkedIn](https://www.linkedin.com/in/YOUR-HANDLE)
+Built by **Swarali Nasikkar** · [GitHub](https://github.com/SwaraliNasikkar) · [LinkedIn](https://www.linkedin.com/in/Swarali Nasikkar)
 
 </div>
